@@ -30,28 +30,7 @@ public class Loader implements Closeable {
     protected String basicAuth;
     protected Instant lastLoad;
 
-    class Legend  {
-        private String uuid;
-        private String field;
-        private String statType; // "AVERAGE", "MIN", "MAX"
-        public Legend(String[] legend) {
-            statType = legend[0];
-            uuid = legend[2];
-            field = legend[3];
-        }
 
-        public String getUuid() {
-            return uuid;
-        }
-
-        public String getField() {
-            return field;
-        }
-
-        public String getStatType() {
-            return statType;
-        }
-    }
     /**
      * Connects to InfluxDB and configures Xen API params
      *
@@ -111,41 +90,25 @@ public class Loader implements Closeable {
         }
     }
     protected void readXmlData (InputSource inputSource) throws ParserConfigurationException, IOException, SAXException {
-        var domFactory = DocumentBuilderFactory.newInstance();
-        domFactory.setNamespaceAware(true);
-        var builder = domFactory.newDocumentBuilder();
-        var doc = builder.parse(inputSource);
-        var nodes = doc.getDocumentElement().getChildNodes(); //<xport> {...} </xport>
-        Map<String, Point.Builder> legendMap = null;
-        var legends = new LinkedList<Legend>();
-        for (int i = 0; i < nodes.getLength(); ++i) {
-            var node = nodes.item(i);
-            if (node.getNodeName().equals("meta")) {
-                var metaNodes = node.getChildNodes();
-                for (int j = 0; j < metaNodes.getLength(); ++j) {
-                    var metaNode = metaNodes.item(i);
-                    if (metaNode.getNodeName().equals("end")) {
-                        lastLoad = Instant.ofEpochSecond(Long.parseLong(metaNode.getNodeValue()));
-                    }
-                    else if (metaNode.getNodeName().equals("legend")) {
-                        var legendNodes = metaNode.getChildNodes();
-                        for (int k = 0; k < legendNodes.getLength(); ++k) {
-                            var legendNode = legendNodes.item(k);
-                            var arrLegend = legendNode.getNodeValue().split(":");
-                            var legend = new Legend(arrLegend);
-                            legends.add(legend);
-                        }
-                        legendMap = initializeLegendMap(legends);
-                    }
-                }
+
+    }
+
+    protected void processMetaNode(Node node) {
+        var metaNodes = node.getChildNodes();
+        for (int j = 0; j < metaNodes.getLength(); ++j) {
+            var metaNode = metaNodes.item(i);
+            if (metaNode.getNodeName().equals("end")) {
+                lastLoad = Instant.ofEpochSecond(Long.parseLong(metaNode.getNodeValue()));
             }
-            else if (node.getNodeName().equals("data")) {
-                var rowNodes = node.getChildNodes();
-                for (int j = 0; j < rowNodes.getLength(); ++j) {
-                    var rowNode = rowNodes.item(j);
-                    addDataPointFromDataNode(rowNode, legends, legendMap);
-                    clearLegendMap(legendMap);
+            else if (metaNode.getNodeName().equals("legend")) {
+                var legendNodes = metaNode.getChildNodes();
+                for (int k = 0; k < legendNodes.getLength(); ++k) {
+                    var legendNode = legendNodes.item(k);
+                    var arrLegend = legendNode.getNodeValue().split(":");
+                    var legend = new Legend(arrLegend);
+                    legends.add(legend);
                 }
+                legendMap = initializeLegendMap(legends);
             }
         }
     }
