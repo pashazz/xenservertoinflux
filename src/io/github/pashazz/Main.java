@@ -7,6 +7,13 @@ public class Main {
     public static void main(String[] args) {
 	// write your code here
         System.out.println("Hello, World!");
+        try {
+            Loader loader = new Loader("http://10.10.10.18", "root", "!QAZxsw2", "http://localhost:8086");
+            loader.start();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
 
