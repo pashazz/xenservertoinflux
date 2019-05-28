@@ -41,12 +41,14 @@ public class Loader implements Closeable {
     ) throws MalformedURLException, Types.XenAPIException, XmlRpcException {
 
         influxDB = InfluxDBFactory.connect(influxDBUrl);
+        System.err.println("Connected to InfluxDB " + influxDBUrl);
         influxDB.setDatabase(dbName);
         BatchOptions batchOptions = BatchOptions.DEFAULTS;
         influxDB.enableBatch(batchOptions);
         xapiConnection = new Connection(new URL(masterHostUrl));
         Session.loginWithPassword(xapiConnection, xapiUsername, xapiPassword);
         basicAuth = "Basic " + Base64.getEncoder().encodeToString(String.format("%s:%s", xapiUsername, xapiPassword).getBytes());
+        System.err.println("Connected to XenServer " + masterHostUrl);
     }
 
     public void start() {
