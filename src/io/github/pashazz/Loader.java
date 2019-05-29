@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class Loader implements Closeable {
     protected Connection xapiConnection;
@@ -29,7 +30,7 @@ public class Loader implements Closeable {
     protected String dbName = "vmemperor";
     protected String basicAuth;
     protected Instant lastLoad;
-
+    protected boolean debug;
 
     /**
      * Connects to InfluxDB and configures Xen API params
@@ -37,9 +38,11 @@ public class Loader implements Closeable {
      * @param masterHostUrl URL of xapi pool's master hos
      * @throws MalformedURLException
      */
-    public Loader(final String masterHostUrl, final String xapiUsername, final String xapiPassword, final String influxDBUrl
-    ) throws MalformedURLException, Types.XenAPIException, XmlRpcException {
 
+    Loader(final String masterHostUrl, final String xapiUsername, final String xapiPassword, final String influxDBUrl,
+           final boolean debug
+    ) throws MalformedURLException, Types.XenAPIException, XmlRpcException {
+        this.debug = debug;
         influxDB = InfluxDBFactory.connect(influxDBUrl);
         System.err.println("Connected to InfluxDB " + influxDBUrl);
         influxDB.setDatabase(dbName);
@@ -70,8 +73,7 @@ public class Loader implements Closeable {
 
 
     protected void getUpdates(int secondsAgo) throws IOException, Types.XenAPIException, XmlRpcException {
-        if (lastLoad == null)
-            lastLoad = Instant.now().minus(Duration.ofSeconds(secondsAgo));
+        lastLoad = Instant.now().minus(Duration.ofSeconds(secondsAgo));
         for (var host : Host.getAll(xapiConnection)) {
             var apiUrl = String.format("http://%s/rrd_updates/?start=%d", host.getAddress(xapiConnection), lastLoad.getEpochSecond());
             try {
@@ -80,7 +82,19 @@ public class Loader implements Closeable {
 
                 conn.setRequestProperty("Authorization", basicAuth);
                 try(var reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-                    readXmlData(new InputSource(reader));
+                    InputSource inputSource;
+                    if (debug) {
+                        String result = reader.lines().parallel().collect(Collectors.joining("\n"));
+                        var writer = new BufferedWriter(new FileWriter("/tmp/xenserver2influx" + lastLoad.toString()));
+                        writer.write(result);
+                        writer.close();
+                        inputSource = new InputSource(new StringReader(result));
+                    }
+                    else {
+                        inputSource = new InputSource(reader);
+                    }
+
+                    readXmlData(inputSource);
                 }
 
             } catch (Exception ex) {

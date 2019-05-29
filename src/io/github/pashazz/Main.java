@@ -21,6 +21,7 @@ public class Main {
         options.addRequiredOption("p", "password", true, "XenAPI administrator password");
         options.addOption("db", "influxDB", true, "InfluxDB URL. Default: http://localhost:8086");
         options.addOption("h", "help", false, "print help message");
+        options.addOption("d", "debug", false, "write xml files into /tmp/ folder");
 
         var parser = new DefaultParser();
         CommandLine line;
@@ -50,7 +51,7 @@ public class Main {
 
 
         try {
-            Loader loader = new Loader(masterHostUrl, username, password, influxDB);
+            Loader loader = new Loader(masterHostUrl, username, password, influxDB, line.hasOption("d"));
             loader.start();
         }
         catch (Exception ex) {

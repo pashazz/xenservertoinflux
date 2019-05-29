@@ -107,18 +107,18 @@ public class Parser {
     }
 
     protected void addDataPointsFromRowNode(Node rowNode) {
-        var nodes = rowNode.getChildNodes();
-        var timeNode = nodes.item(0);
+        var timeNode = rowNode.getFirstChild();
         if (!timeNode.getNodeName().equals("t")) {
             throw new IllegalArgumentException(String.format("timeNode name is %s. Expected: t", timeNode.getNodeName()));
         }
 
         legendMap.forEach((uuid, point) -> legendMap.replace(uuid, point.time(Long.parseLong(timeNode.getTextContent()), TimeUnit.SECONDS)));
         var currentNode = timeNode.getNextSibling();
-        for (var i = legends.iterator(); i.hasNext() && (currentNode != null);) {
+        for (var i = legends.iterator(); i.hasNext() && (currentNode != null); currentNode = currentNode.getNextSibling()) {
             if (!currentNode.getNodeName().equals("v"))
                 throw new IllegalArgumentException(String.format("currentNode name is %s. Expected: v", currentNode.getNodeName()));
             var legend = i.next();
+
             legendMap.replace(legend.getUuid(),
                     legendMap.get(legend.getUuid()).addField(legend.getField(), Double.parseDouble(currentNode.getTextContent())));
 
