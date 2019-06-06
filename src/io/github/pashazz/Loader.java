@@ -75,7 +75,7 @@ public class Loader implements Closeable {
     protected void getUpdates(int secondsAgo) throws IOException, Types.XenAPIException, XmlRpcException {
         lastLoad = Instant.now().minus(Duration.ofSeconds(secondsAgo));
         for (var host : Host.getAll(xapiConnection)) {
-            var apiUrl = String.format("http://%s/rrd_updates/?start=%d", host.getAddress(xapiConnection), lastLoad.getEpochSecond());
+            var apiUrl = String.format("http://%s/rrd_updates/?start=%d&host=true", host.getAddress(xapiConnection), lastLoad.getEpochSecond());
             try {
                 var url = new URL(apiUrl);
                 var conn = url.openConnection();
