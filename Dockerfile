@@ -1,5 +1,5 @@
 FROM gradle:jdk11 as builder
-COPY --chown gradle:gradle . /src
+ADD . /src
 WORKDIR /src
 RUN gradle build
 
